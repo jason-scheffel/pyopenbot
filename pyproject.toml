@@ -2,7 +2,11 @@
 name = "openbot"
 version = "0.1.0"
 description = "Add your description here"
+authors = [
+  {name = "Jason Scheffel", email = "contact@jasonscheffel.com"},
+]
 readme = "README.md"
+license = {file = "LICENSE"}
 requires-python = ">=3.12"
 dependencies = []
 
