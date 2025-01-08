@@ -1,6 +1,6 @@
 import typer
 from .cli_commands.Run import Run
-from .cli_commands.Test import Test
+from .cli_commands.Init import Init
 
 
 class CLI:
@@ -10,7 +10,7 @@ class CLI:
         )
 
         self.app.command("run")(Run().run_command)
-        self.app.command("test")(Test().run_command)
+        self.app.command("init")(Init().run_command)
 
     def run(self) -> None:
         self.app()
