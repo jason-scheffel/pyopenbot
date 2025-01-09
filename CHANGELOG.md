@@ -1,3 +1,10 @@
+## 0.3.0 (2025-01-09)
+
+### Feat
+
+- update version in lock
+- add hatchling stuff
+
 ## 0.2.0 (2025-01-09)
 
 ### Feat

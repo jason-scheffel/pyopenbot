@@ -1,6 +1,6 @@
 [project]
 name = "pyopenbot"
-version = "0.2.0"
+version = "0.3.0"
 description = "Add your description here"
 authors = [
   {name = "Jason Scheffel", email = "contact@jasonscheffel.com"},
