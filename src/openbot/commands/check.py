@@ -2,6 +2,7 @@ from openbot.platforms.base_platform import BasePlatform
 from openbot.commands.base_command import BaseCommand
 
 from pathlib import Path
+from typing import List
 
 
 class Check(BaseCommand):
@@ -13,16 +14,19 @@ class Check(BaseCommand):
         character_config: Path,
         openbot_config: Path,
     ) -> None:
-        if character_config.exists() and openbot_config.exists():
-            self.platform.send_message(
-                f"character config {character_config} and openbot config {openbot_config} exist"
-            )
+        messages: List[str] = []
+
+        if character_config.exists():
+            messages.append(f"character config {character_config} exists")
         else:
-            if not character_config.exists():
-                self.platform.send_message(
-                    f"character config {character_config} does not exist"
-                )
-            if not openbot_config.exists():
-                self.platform.send_message(
-                    f"openbot config {openbot_config} does not exist"
-                )
+            messages.append(
+                f"character config {character_config} does not exist"
+            )
+
+        if openbot_config.exists():
+            messages.append(f"openbot config {openbot_config} exists")
+        else:
+            messages.append(f"openbot config {openbot_config} does not exist")
+
+        for message in messages:
+            self.platform.send_message(message)
