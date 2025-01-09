@@ -1,7 +1,8 @@
 import typer
-from openbot.commands.Run import Run
-from openbot.commands.Init import Init
-from openbot.commands.Check import Check
+from openbot.commands.run import Run
+from openbot.commands.init import Init
+from openbot.commands.check import Check
+from openbot.platforms.cli_platform import CLIPlatform
 
 class CLI:
     def __init__(self):
@@ -9,9 +10,11 @@ class CLI:
             help="OpenBot CLI", no_args_is_help=True
         )
 
-        self.app.command("run")(Run().run_command)
-        self.app.command("init")(Init().run_command)
-        self.app.command("check")(Check().run_command)
+        self.platform = CLIPlatform()
+
+        self.app.command("run")(Run(self.platform).run)
+        self.app.command("init")(Init(self.platform).run)
+        self.app.command("check")(Check(self.platform).run)
 
     def run(self) -> None:
         self.app()
