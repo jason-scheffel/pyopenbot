@@ -1,4 +1,4 @@
-from openbot.cli.CLI import CLI
+from pyopenbot.cli.CLI import CLI
 
 def main() -> None:
     cli: CLI = CLI()

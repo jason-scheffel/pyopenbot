@@ -1,6 +1,6 @@
-from openbot.platforms.base_platform import BasePlatform
-from openbot.commands.base_command import BaseCommand
-from openbot.character import Character
+from pyopenbot.platforms.base_platform import BasePlatform
+from pyopenbot.commands.base_command import BaseCommand
+from pyopenbot.character import Character
 
 from pathlib import Path
 from typing import List

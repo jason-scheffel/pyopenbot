@@ -1,4 +1,4 @@
-from openbot.platforms.base_platform import BasePlatform
+from pyopenbot.platforms.base_platform import BasePlatform
 
 
 class CLIPlatform(BasePlatform):

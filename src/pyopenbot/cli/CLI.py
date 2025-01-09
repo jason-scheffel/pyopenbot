@@ -1,8 +1,8 @@
 import typer
-from openbot.commands.run import Run
-from openbot.commands.init import Init
-from openbot.commands.check import Check
-from openbot.platforms.cli_platform import CLIPlatform
+from pyopenbot.commands.run import Run
+from pyopenbot.commands.init import Init
+from pyopenbot.commands.check import Check
+from pyopenbot.platforms.cli_platform import CLIPlatform
 
 class CLI:
     def __init__(self):
