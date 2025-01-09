@@ -1,5 +1,5 @@
-from ..platforms.base_platform import BasePlatform
-from .base_command import BaseCommand
+from openbot.platforms.base_platform import BasePlatform
+from openbot.commands.base_command import BaseCommand
 
 class Check(BaseCommand):
     def __init__(self, platform: BasePlatform) -> None:

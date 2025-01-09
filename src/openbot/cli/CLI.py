@@ -1,7 +1,7 @@
 import typer
-from .cli_commands.Run import Run
-from .cli_commands.Init import Init
-from .cli_commands.Check import Check
+from openbot.commands.Run import Run
+from openbot.commands.Init import Init
+from openbot.commands.Check import Check
 
 class CLI:
     def __init__(self):
