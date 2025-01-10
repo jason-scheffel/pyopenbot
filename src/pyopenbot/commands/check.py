@@ -1,4 +1,4 @@
-from pyopenbot.platforms.base_platform import BasePlatform
+from pyopenbot.platforms.cli_platform import CLIPlatform
 from pyopenbot.commands.base_command import BaseCommand
 from pyopenbot.character import Character
 
@@ -7,8 +7,8 @@ from typing import List
 
 
 class Check(BaseCommand):
-    def __init__(self, platform: BasePlatform) -> None:
-        self.platform = platform
+    def __init__(self) -> None:
+        self.cli_platform = CLIPlatform()
 
     def run(
         self,
@@ -35,4 +35,4 @@ class Check(BaseCommand):
             messages.append(f"OpenBot config {openbot_config} does not exist")
 
         for message in messages:
-            self.platform.send_message(message)
+            self.cli_platform.send_message(message)
