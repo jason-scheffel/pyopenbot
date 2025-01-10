@@ -6,4 +6,4 @@ class Init(BaseCommand):
         self.cli_platform = CLIPlatform()
 
     def run(self) -> None:
-        self.platform.send_message("running the init command")
+        self.cli_platform.send_message("running the init command")
