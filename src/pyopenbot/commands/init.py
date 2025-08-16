@@ -64,11 +64,12 @@ class Init(BaseCommand):
         table.add_column("Context", style="green")
         table.add_column("Description")
         table.add_row("z-ai/glm-4.5", "8K", "Fast and cost-effective")
+        table.add_row("microsoft/mai-ds-r1:free", "8K", "Free model (trains on data)")
         self.console.print(table)
         
         model = Prompt.ask(
             "Select model",
-            choices=["z-ai/glm-4.5"],
+            choices=["z-ai/glm-4.5", "microsoft/mai-ds-r1:free"],
             default="z-ai/glm-4.5"
         )
         
