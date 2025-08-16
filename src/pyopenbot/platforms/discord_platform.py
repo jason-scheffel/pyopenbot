@@ -156,7 +156,8 @@ Be natural. Be human. Don't explain your message reading process."""
                 llm_messages
             )
         
-        self.memory.add_message("assistant", response)
+        bot_name = self.bot.user.name if self.bot.user else "assistant"
+        self.memory.add_message("assistant", f"[{bot_name}]: {response}")
         if usage:
             self.memory.add_usage(usage)
         
@@ -271,7 +272,8 @@ Be natural. Be human. Don't explain your message reading process."""
         
         for message in conversation_messages:
             if message.author == self.bot.user:
-                self.memory.add_message("assistant", message.content)
+                bot_name = message.author.name
+                self.memory.add_message("assistant", f"[{bot_name}]: {message.content}")
             else:
                 username = message.author.name
                 content = self._clean_message_content(message)
