@@ -82,6 +82,10 @@ Be natural. Be human. Don't explain your message reading process."""
         @self.bot.command(name='config', help='Show current configuration')
         async def show_config(ctx):
             await self._cmd_show_config(ctx)
+        
+        @self.bot.command(name='resume', help='Resume previous conversation by loading N messages')
+        async def resume_conversation(ctx, count: int):
+            await self._cmd_resume(ctx, count)
     
     def _should_respond(self, message: discord.Message) -> bool:
         if self.character.discord_channel_id:
@@ -245,6 +249,37 @@ Be natural. Be human. Don't explain your message reading process."""
         if self.character.discord_channel_id:
             embed.add_field(name="Channel ID", value=self.character.discord_channel_id, inline=True)
         await ctx.send(embed=embed)
+    
+    async def _cmd_resume(self, ctx, count: int):
+        self.memory.clear()
+        
+        messages_added = 0
+        messages_skipped = 0
+        conversation_messages = []
+        
+        async for message in ctx.channel.history(limit=count):
+            if message.content.startswith('/'):
+                messages_skipped += 1
+                continue
+            if message.embeds and message.author == self.bot.user:
+                messages_skipped += 1
+                continue
+            
+            conversation_messages.append(message)
+        
+        conversation_messages.reverse()
+        
+        for message in conversation_messages:
+            if message.author == self.bot.user:
+                self.memory.add_message("assistant", message.content)
+            else:
+                username = message.author.name
+                content = self._clean_message_content(message)
+                self.memory.add_message("user", f"[{username}]: {content}")
+            messages_added += 1
+        
+        total_processed = messages_added + messages_skipped
+        await ctx.send(f"✅ Restored {messages_added} messages to memory (skipped {messages_skipped} commands/embeds, processed {total_processed}/{count} total)")
     
     def run(self, token: str):
         self.bot.run(token)
