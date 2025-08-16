@@ -9,11 +9,19 @@ class LLMService:
         self.character = character
         self.model = f"openrouter/{character.llm_model}"  # e.g., "openrouter/z-ai/glm-4.5"
         
-    def get_response(self, user_message: str, conversation_history: List[Dict]) -> tuple[str, dict]:
-        messages = [
-            {"role": "system", "content": self.character.character_card},
-            *conversation_history
-        ]
+    def get_response(self, user_message, conversation_history: List[Dict]) -> tuple[str, dict]:
+        if isinstance(user_message, str):
+            # Simple text message - use existing conversation history
+            messages = [
+                {"role": "system", "content": self.character.character_card},
+                *conversation_history
+            ]
+        else:
+            messages = [
+                {"role": "system", "content": self.character.character_card},
+                *conversation_history[:-1],  # All but the last system message
+                {"role": "user", "content": user_message}  # Add structured content as user message
+            ]
         
         response = completion(
             model=self.model,

@@ -111,6 +111,13 @@ Be natural. Be human. Don't explain your message reading process."""
         content = message.content.replace(f'<@{self.bot.user.id}>', '').strip()
         return content if content else "Hello"
     
+    def _get_image_attachments(self, message: discord.Message) -> list:
+        images = []
+        for attachment in message.attachments:
+            if attachment.content_type and attachment.content_type.startswith('image/'):
+                images.append(attachment)
+        return images
+    
     def _format_pending_message(self, message: discord.Message) -> Dict[str, str]:
         """Format a message as a pending message for LLM context"""
         content = self._clean_message_content(message)
@@ -142,9 +149,13 @@ Be natural. Be human. Don't explain your message reading process."""
     def _build_enhanced_system_prompt(self) -> str:
         return f"{self.character.character_card}\n{self.DISCORD_CONTEXT_PROMPT}"
     
-    def _build_llm_context(self, content: str, username: str, pending_messages: List[Dict]) -> List[Dict]:
+    def _build_llm_context(self, content, username: str, pending_messages: List[Dict]) -> List[Dict]:
         """Build the complete message context for the LLM"""
-        response_indicator = f"[System]: Now responding to {username}'s message: \"{content}\""
+        if isinstance(content, list):
+            # Images present
+            response_indicator = f"[System]: Now responding to {username}'s message with images"
+        else:
+            response_indicator = f"[System]: Now responding to {username}'s message: \"{content}\""
         
         return [
             {"role": "system", "content": self._build_enhanced_system_prompt()},
@@ -158,15 +169,42 @@ Be natural. Be human. Don't explain your message reading process."""
         content = self._clean_message_content(message)
         username = message.author.name
         
-        self.memory.add_message("user", f"[{username}]: {content}")
+        images = self._get_image_attachments(message)
+        
+        memory_content = f"[{username}]: {content}"
+        if images:
+            image_names = [img.filename for img in images]
+            memory_content += f" [attached image{'s' if len(images) > 1 else ''}: {', '.join(image_names)}]"
+        
+        self.memory.add_message("user", memory_content)
+        
+        if images:
+            llm_content = [
+                {"type": "text", "text": content if content else "What's in this image?"}
+            ]
+            for img in images:
+                llm_content.append({
+                    "type": "image_url",
+                    "image_url": {"url": img.url}
+                })
+        else:
+            llm_content = content
         
         pending_messages, _ = await self._get_pending_messages()
         
-        llm_messages = self._build_llm_context(content, username, pending_messages)
+        llm_messages = self._build_llm_context(llm_content, username, pending_messages)
         
         async with message.channel.typing():
+            # Pass structured content if images present
+            if images:
+                user_msg = [
+                    {"type": "text", "text": f"[System]: Now responding to {username}'s message with {len(images)} image{'s' if len(images) > 1 else ''}"}
+                ]
+            else:
+                user_msg = f"[System]: Now responding to {username}'s message: \"{content}\""
+            
             response, usage = self.llm_service.get_response(
-                f"[System]: Now responding to {username}'s message: \"{content}\"",
+                user_msg,
                 llm_messages
             )
         
