@@ -102,6 +102,23 @@ class Init(BaseCommand):
             "frequency_penalty": 0.0
         }
         
+        discord_config = {}
+        if platform == "discord":
+            self.console.print("\n[bold]🔑 Discord Bot Configuration[/bold]")
+            self.console.print("─" * 40)
+            
+            use_file = Confirm.ask("Read Discord token from file?", default=False)
+            
+            if use_file:
+                token_file = Prompt.ask("Discord token file path")
+                discord_config = {"token_file": token_file}
+            else:
+                discord_token = Prompt.ask("Enter Discord Bot Token", password=True)
+                discord_config = {"token": discord_token}
+            
+            channel_id = Prompt.ask("Discord Channel ID to respond in")
+            discord_config["channel_id"] = channel_id
+        
         self.console.print("\n[bold]🧠 Memory Configuration[/bold]")
         self.console.print("─" * 40)
         
@@ -136,31 +153,44 @@ class Init(BaseCommand):
             }
         }
         
-        if use_file:
-            character = Character(
-                character_name=character_name,
-                character_card=character_card,
-                platform=platform,
-                llm_provider=provider,
-                llm_model=model,
-                api_key="",
-                settings=settings,
-                memory_type=memory_type
-            )
-
-            character._api_key_source = f"file:{api_key_file}"
+        if platform == "discord" and discord_config:
+            config["discord"] = discord_config
+        
+        if platform == "discord":
+            discord_token = ""
+            discord_token_source = None
+            discord_channel_id = discord_config.get("channel_id")
+            if "token" in discord_config:
+                discord_token = discord_config["token"]
+                discord_token_source = "direct"
+            elif "token_file" in discord_config:
+                discord_token = ""
+                discord_token_source = f"file:{discord_config['token_file']}"
         else:
-            character = Character(
-                character_name=character_name,
-                character_card=character_card,
-                platform=platform,
-                llm_provider=provider,
-                llm_model=model,
-                api_key=api_key,
-                settings=settings,
-                memory_type=memory_type
-            )
+            discord_token = None
+            discord_token_source = None
+            discord_channel_id = None
+        
+        character = Character(
+            character_name=character_name,
+            character_card=character_card,
+            platform=platform,
+            llm_provider=provider,
+            llm_model=model,
+            api_key=api_key if 'api_key' in api_key_config else "",
+            settings=settings,
+            memory_type=memory_type,
+            discord_token=discord_token,
+            discord_channel_id=discord_channel_id
+        )
+        
+        if 'api_key_file' in api_key_config:
+            character._api_key_source = f"file:{api_key_config['api_key_file']}"
+        else:
             character._api_key_source = "direct"
+        
+        if platform == "discord":
+            character._discord_token_source = discord_token_source
         
         character.save_to_yaml(config_path)
         

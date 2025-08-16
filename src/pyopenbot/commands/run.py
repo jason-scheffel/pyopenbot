@@ -32,16 +32,41 @@ class Run(BaseCommand):
             max_context=character.settings.get("context_window", 8192)
         )
         
-        self.console.print(Panel(
-            f"[bold cyan]🤖 PyOpenBot v0.3.0 - {character.platform.title()}[/bold cyan]\n"
-            f"Character: {character.character_name}\n"
-            f"Model: {character.llm_model} via {character.llm_provider.title()}\n"
-            f"Memory: {character.memory_type.title()}\n"
-            f"Commands: /help /quit /clear /system /stats",
-            title="PyOpenBot Started"
-        ))
-        
-        self.conversation_loop(character, llm_service, memory)
+        if character.platform == "discord":
+            if not character.discord_token:
+                self.console.print("[red]Error: Discord token not configured[/red]")
+                return
+            
+            from pyopenbot.platforms.discord_platform import DiscordPlatform
+            
+            discord_platform = DiscordPlatform(character, llm_service, memory)
+            
+            channel_info = f"Channel: {character.discord_channel_id}\n" if character.discord_channel_id else "Channel: All (DMs and mentions)\n"
+            self.console.print(Panel(
+                f"[bold cyan]🤖 PyOpenBot Discord Mode[/bold cyan]\n"
+                f"Character: {character.character_name}\n"
+                f"Model: {character.llm_model} via {character.llm_provider.title()}\n"
+                f"Memory: {character.memory_type.title()}\n"
+                f"{channel_info}"
+                f"Starting Discord bot...",
+                title="Discord Bot Starting"
+            ))
+            
+            try:
+                discord_platform.run(character.discord_token)
+            except Exception as e:
+                self.console.print(f"[red]Discord Error: {e}[/red]")
+        else:
+            self.console.print(Panel(
+                f"[bold cyan]🤖 PyOpenBot v0.3.0 - {character.platform.title()}[/bold cyan]\n"
+                f"Character: {character.character_name}\n"
+                f"Model: {character.llm_model} via {character.llm_provider.title()}\n"
+                f"Memory: {character.memory_type.title()}\n"
+                f"Commands: /help /quit /clear /system /stats /history /config",
+                title="PyOpenBot Started"
+            ))
+            
+            self.conversation_loop(character, llm_service, memory)
     
     def conversation_loop(self, character, llm_service, memory):
         while True:
@@ -123,6 +148,38 @@ class Run(BaseCommand):
             
             self.console.print(table)
         
+        elif cmd == "/history":
+            messages = memory.get_messages()
+            
+            full_messages = [
+                {"role": "system", "content": character.character_card},
+                *messages
+            ]
+            
+            self.console.print(Panel("[bold]Conversation History (sent to model)[/bold]", title="History"))
+            for msg in full_messages:
+                role_color = "cyan" if msg['role'] == "user" else "green" if msg['role'] == "assistant" else "yellow"
+                self.console.print(f"[bold {role_color}]{msg['role'].upper()}:[/bold {role_color}]")
+                self.console.print(msg['content'])
+                self.console.print()
+        
+        elif cmd == "/config":
+            table = Table(title="Bot Configuration")
+            table.add_column("Setting", style="cyan")
+            table.add_column("Value", style="green")
+            
+            table.add_row("Character Name", character.character_name)
+            table.add_row("Provider", character.llm_provider)
+            table.add_row("Model", character.llm_model)
+            table.add_row("Memory Type", character.memory_type)
+            table.add_row("Temperature", str(character.settings.get('temperature', 'N/A')))
+            table.add_row("Top-p", str(character.settings.get('top_p', 'N/A')))
+            table.add_row("Max Tokens", str(character.settings.get('max_tokens', 'N/A')))
+            table.add_row("Context Window", str(character.settings.get('context_window', 'N/A')))
+            table.add_row("Platform", character.platform)
+            
+            self.console.print(table)
+        
         elif cmd == "/help":
             help_text = """
 [bold]Available Commands:[/bold]
@@ -131,6 +188,8 @@ class Run(BaseCommand):
   /clear   - Clear conversation history
   /system  - Show system prompt
   /stats   - Show session statistics
+  /history - Show full conversation history sent to model
+  /config  - Show bot configuration
             """
             self.console.print(Panel(help_text.strip(), title="[bold]Help[/bold]"))
         

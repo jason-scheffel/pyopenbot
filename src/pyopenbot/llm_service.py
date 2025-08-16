@@ -1,6 +1,7 @@
 from any_llm import completion
 from typing import List, Dict, Any, Optional
 import requests
+import time
 
 
 class LLMService:
@@ -11,8 +12,7 @@ class LLMService:
     def get_response(self, user_message: str, conversation_history: List[Dict]) -> tuple[str, dict]:
         messages = [
             {"role": "system", "content": self.character.character_card},
-            *conversation_history,
-            {"role": "user", "content": user_message}
+            *conversation_history
         ]
         
         response = completion(
@@ -28,27 +28,37 @@ class LLMService:
         
         usage = {}
         
-        # Get generation ID and query for exact cost
         if hasattr(response, 'id'):
             generation_id = response.id
+            time.sleep(2)
             
-            try:
-                headers = {'Authorization': f'Bearer {self.character.api_key}'}
-                gen_response = requests.get(
-                    f'https://openrouter.ai/api/v1/generation?id={generation_id}',
-                    headers=headers,
-                    timeout=5
-                )
-                
-                if gen_response.status_code == 200:
-                    gen_data = gen_response.json().get('data', {})
-                    usage = {
-                        'cost': gen_data.get('total_cost', 0),
-                        'prompt_tokens': gen_data.get('native_tokens_prompt', 0),
-                        'completion_tokens': gen_data.get('native_tokens_completion', 0),
-                        'total_tokens': gen_data.get('native_tokens_prompt', 0) + gen_data.get('native_tokens_completion', 0)
-                    }
-            except:
-                pass
+            for attempt in range(3):
+                try:
+                    if attempt > 0:
+                        time.sleep(1)
+                    
+                    headers = {'Authorization': f'Bearer {self.character.api_key}'}
+                    gen_response = requests.get(
+                        f'https://openrouter.ai/api/v1/generation?id={generation_id}',
+                        headers=headers,
+                        timeout=5
+                    )
+                    
+                    if gen_response.status_code == 200:
+                        gen_data = gen_response.json().get('data', {})
+                        usage['cost'] = gen_data.get('total_cost', 0)
+                        if gen_data.get('native_tokens_prompt'):
+                            usage['prompt_tokens'] = gen_data.get('native_tokens_prompt', 0)
+                        if gen_data.get('native_tokens_completion'):
+                            usage['completion_tokens'] = gen_data.get('native_tokens_completion', 0)
+                        usage['total_tokens'] = usage.get('prompt_tokens', 0) + usage.get('completion_tokens', 0)
+                        break
+                    elif gen_response.status_code == 404 and attempt < 2:
+                        continue
+                    else:
+                        break
+                except:
+                    if attempt == 2:
+                        break
                 
         return response.choices[0].message.content, usage

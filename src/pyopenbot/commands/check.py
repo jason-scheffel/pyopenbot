@@ -35,7 +35,6 @@ class Check(BaseCommand):
             character = Character.from_yaml(character_config)
             table.add_row("Valid YAML", "✅", "Successfully parsed")
             
-            # Validate required fields
             if character.character_name:
                 table.add_row("Character name", "✅", character.character_name)
             else:
@@ -72,7 +71,6 @@ class Check(BaseCommand):
                 table.add_row("API key", "❌", "[red]Not configured[/red]")
                 has_errors = True
             
-            # Validate settings
             required_settings = ["temperature", "top_p", "max_tokens", "context_window"]
             for setting in required_settings:
                 if setting in character.settings:
@@ -86,6 +84,14 @@ class Check(BaseCommand):
             else:
                 table.add_row("Memory", "❌", "[red]Missing[/red]")
                 has_errors = True
+            
+            if character.platform == "discord":
+                if character.discord_token:
+                    source = "Direct" if character._discord_token_source == "direct" else "File"
+                    table.add_row("Discord Token", "✅", f"Configured ({source})")
+                else:
+                    table.add_row("Discord Token", "❌", "[red]Not configured[/red]")
+                    has_errors = True
             
             self.console.print(table)
             
