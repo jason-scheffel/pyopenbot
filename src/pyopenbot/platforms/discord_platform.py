@@ -84,8 +84,8 @@ Be natural. Be human. Don't explain your message reading process."""
             await self._cmd_show_config(ctx)
     
     def _should_respond(self, message: discord.Message) -> bool:
-        if self.character.discord_channel_id and str(message.channel.id) == str(self.character.discord_channel_id):
-            return True
+        if self.character.discord_channel_id:
+            return str(message.channel.id) == str(self.character.discord_channel_id)
         return False
     
     def _clean_message_content(self, message: discord.Message) -> str:
