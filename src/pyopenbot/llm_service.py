@@ -1,5 +1,6 @@
 from any_llm import completion
 from typing import List, Dict, Any, Optional
+import requests
 
 
 class LLMService:
@@ -7,7 +8,7 @@ class LLMService:
         self.character = character
         self.model = f"openrouter/{character.llm_model}"  # e.g., "openrouter/z-ai/glm-4.5"
         
-    def get_response(self, user_message: str, conversation_history: List[Dict]) -> str:
+    def get_response(self, user_message: str, conversation_history: List[Dict]) -> tuple[str, dict]:
         messages = [
             {"role": "system", "content": self.character.character_card},
             *conversation_history,
@@ -25,10 +26,29 @@ class LLMService:
             frequency_penalty=self.character.settings.get("frequency_penalty", 0.0),
         )
         
-        return response.choices[0].message.content
-    
-    def count_tokens(self, messages: List[Dict]) -> int:
-        total = 0
-        for msg in messages:
-            total += len(msg.get("content", "")) // 4  # Rough estimate: 1 token ≈ 4 chars
-        return total
+        usage = {}
+        
+        # Get generation ID and query for exact cost
+        if hasattr(response, 'id'):
+            generation_id = response.id
+            
+            try:
+                headers = {'Authorization': f'Bearer {self.character.api_key}'}
+                gen_response = requests.get(
+                    f'https://openrouter.ai/api/v1/generation?id={generation_id}',
+                    headers=headers,
+                    timeout=5
+                )
+                
+                if gen_response.status_code == 200:
+                    gen_data = gen_response.json().get('data', {})
+                    usage = {
+                        'cost': gen_data.get('total_cost', 0),
+                        'prompt_tokens': gen_data.get('native_tokens_prompt', 0),
+                        'completion_tokens': gen_data.get('native_tokens_completion', 0),
+                        'total_tokens': gen_data.get('native_tokens_prompt', 0) + gen_data.get('native_tokens_completion', 0)
+                    }
+            except:
+                pass
+                
+        return response.choices[0].message.content, usage

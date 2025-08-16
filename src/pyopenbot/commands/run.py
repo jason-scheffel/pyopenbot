@@ -57,16 +57,21 @@ class Run(BaseCommand):
                 
                 try:
                     self.console.print("\n[dim]Thinking...[/dim]", end="\r")
-                    response = llm_service.get_response(user_input, memory.get_messages())
+                    response, usage = llm_service.get_response(user_input, memory.get_messages())
                     self.console.print(" " * 20, end="\r")  # Clear "Thinking..."
                     
                     memory.add_message("assistant", response)
+                    if usage:
+                        memory.add_usage(usage)
                     
                     self.console.print(Panel(
                         response,
                         title=f"[bold green]{character.character_name}[/bold green]",
                         border_style="green"
                     ))
+                    
+                    if usage and usage.get('cost') is not None:
+                        self.console.print(f"[dim]Cost: ${usage['cost']:.6f} | Tokens: {usage.get('total_tokens', 0)}[/dim]")
                     
                 except Exception as e:
                     self.console.print(" " * 20, end="\r")  # Clear "Thinking..."
@@ -109,7 +114,10 @@ class Run(BaseCommand):
             table.add_column("Value", style="green")
             
             table.add_row("Messages", str(stats["message_count"]))
-            table.add_row("Tokens", str(stats["token_count"]))
+            table.add_row("Total Cost", f"${stats['total_cost']:.6f}")
+            table.add_row("Prompt Tokens", str(stats["prompt_tokens"]))
+            table.add_row("Completion Tokens", str(stats["completion_tokens"]))
+            table.add_row("Total Tokens", str(stats["total_tokens"]))
             table.add_row("Context Usage", stats["context_usage"])
             table.add_row("Context %", f"{stats['context_percentage']:.1f}%")
             
