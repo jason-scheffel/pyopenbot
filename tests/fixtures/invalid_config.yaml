@@ -1,0 +1,13 @@
+character_name: InvalidBot
+# Missing character_card
+platform: invalid_platform
+
+llm:
+  provider: openrouter
+  # Missing model
+  # Missing api_key
+  settings:
+    temperature: 0.5
+    # Missing other settings
+
+# Missing memory section

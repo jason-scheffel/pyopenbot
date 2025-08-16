@@ -1,0 +1,18 @@
+character_name: TestBotFile
+character_card: Test bot using API key from file
+platform: discord
+
+llm:
+  provider: openrouter
+  model: z-ai/glm-4.5
+  api_key_file: tests/fixtures/test_api_key.txt
+  settings:
+    temperature: 0.8
+    top_p: 0.95
+    max_tokens: 1500
+    context_window: 4096
+    presence_penalty: 0.1
+    frequency_penalty: 0.2
+
+memory:
+  type: unlimited

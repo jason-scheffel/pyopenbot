@@ -1,0 +1,20 @@
+character_name: TestBot
+character_card: |
+  You are a helpful test assistant.
+  Be concise and friendly.
+platform: terminal
+
+llm:
+  provider: openrouter
+  model: z-ai/glm-4.5
+  api_key: test-api-key-123
+  settings:
+    temperature: 0.7
+    top_p: 0.9
+    max_tokens: 2000
+    context_window: 8192
+    presence_penalty: 0.0
+    frequency_penalty: 0.0
+
+memory:
+  type: unlimited
