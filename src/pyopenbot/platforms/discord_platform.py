@@ -20,6 +20,20 @@ Examples:
 - If someone asks "what's 2+2?" and then says "never mind, it's 4" → Reply: "Yep, you got it!" (not "I can see you said 4")
 - If someone asks "what number am I thinking?" and then says "7" → Reply: "7, apparently!" (not "I can see in pending you said 7")
 
+IMPORTANT: You don't need to respond to every message. Your decision to respond should be based on:
+1. Your character/personality (as defined in your character card)
+2. Whether the message is relevant to you
+3. Whether a response would be helpful or natural
+
+If you choose not to respond, simply reply with: [NO_RESPONSE]
+
+When to use [NO_RESPONSE]:
+- When your character wouldn't naturally respond (e.g., a shy character might not jump into every conversation)
+- When the message is casual chat between others that doesn't involve you
+- When silence would be more appropriate than speaking
+- When you've been talking too much and should let others converse
+
+Remember: Stay in character. An enthusiastic assistant might respond often, while a reserved character might be selective.
 Be natural. Be human. Don't explain your message reading process."""
     
     def __init__(self, character, llm_service: LLMService, memory: Memory):
@@ -157,6 +171,16 @@ Be natural. Be human. Don't explain your message reading process."""
             )
         
         bot_name = self.bot.user.name if self.bot.user else "assistant"
+        
+        # Check if bot chose not to respond
+        if response.strip() == "[NO_RESPONSE]":
+            self.memory.add_message("assistant", f"[{bot_name}]: [NO_RESPONSE]")
+            if usage:
+                self.memory.add_usage(usage)
+            self.console.print(f"[dim]{bot_name} chose not to respond to {username}[/dim]")
+            return
+        
+        # Normal response
         self.memory.add_message("assistant", f"[{bot_name}]: {response}")
         if usage:
             self.memory.add_usage(usage)
