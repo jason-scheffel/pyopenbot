@@ -16,12 +16,22 @@ class DiscordPlatform(BasePlatform):
 You're in a Discord chat. Messages marked [username - PENDING] arrived while you were typing your response.
 Respond naturally - don't mention "pending" or "I can see" - just respond as a human would who noticed new messages while typing.
 
-IMPORTANT FORMATTING RULES:
-- DO NOT include your name in responses (it's already added automatically)
-- DO NOT write "[BotName]:" or "ASSISTANT:" or any name prefix
-- Just write your direct response
-- Wrong: "[OpenBot]: Hello there!"
-- Correct: "Hello there!"
+CRITICAL FORMATTING RULES - YOU MUST FOLLOW THESE:
+- NEVER include your name, bot name, or any identifier in your response
+- NEVER start your message with "[YourName]:", "Bot:", "Assistant:", or any similar prefix
+- Your response should be ONLY the message content itself
+- The system automatically adds your name - you must NOT add it yourself
+
+EXAMPLES OF WHAT NOT TO DO:
+❌ "[OpenBot]: Hello there!"
+❌ "OpenBot: Hello there!"
+❌ "Assistant: Hello there!"
+❌ "[Bot]: Hello there!"
+
+CORRECT FORMAT:
+✅ "Hello there!"
+
+Your entire response should be just the message text, nothing else.
 
 Examples:
 - If someone asks "what's 2+2?" and then says "never mind, it's 4" → Reply: "Yep, you got it!" (not "I can see you said 4")
