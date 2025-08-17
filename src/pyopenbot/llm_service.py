@@ -23,16 +23,21 @@ class LLMService:
                 {"role": "user", "content": user_message}  # Add structured content as user message
             ]
         
-        response = completion(
-            model=self.model,
-            messages=messages,
-            api_key=self.character.api_key,
-            temperature=self.character.settings["temperature"],
-            top_p=self.character.settings.get("top_p", 0.9),
-            max_tokens=self.character.settings["max_tokens"],
-            presence_penalty=self.character.settings.get("presence_penalty", 0.0),
-            frequency_penalty=self.character.settings.get("frequency_penalty", 0.0),
-        )
+        completion_kwargs = {
+            "model": self.model,
+            "messages": messages,
+            "api_key": self.character.api_key,
+            "temperature": self.character.settings["temperature"],
+            "top_p": self.character.settings.get("top_p", 0.9),
+            "max_tokens": self.character.settings["max_tokens"],
+            "presence_penalty": self.character.settings.get("presence_penalty", 0.0),
+            "frequency_penalty": self.character.settings.get("frequency_penalty", 0.0),
+        }
+        
+        if self.character.settings.get("reasoning_effort"):
+            completion_kwargs["reasoning_effort"] = self.character.settings["reasoning_effort"]
+        
+        response = completion(**completion_kwargs)
         
         usage = {}
         

@@ -93,6 +93,15 @@ class Init(BaseCommand):
         max_tokens = IntPrompt.ask("Max response tokens", default=2000)
         context_window = IntPrompt.ask("Context window size", default=8192)
         
+        use_reasoning = Confirm.ask("Enable reasoning/thinking mode?", default=False)
+        reasoning_effort = None
+        if use_reasoning:
+            reasoning_effort = Prompt.ask(
+                "Reasoning effort level",
+                choices=["minimal", "low", "medium", "high"],
+                default="medium"
+            )
+        
         settings = {
             "temperature": temperature,
             "top_p": top_p,
@@ -101,6 +110,9 @@ class Init(BaseCommand):
             "presence_penalty": 0.0,
             "frequency_penalty": 0.0
         }
+        
+        if reasoning_effort:
+            settings["reasoning_effort"] = reasoning_effort
         
         discord_config = {}
         if platform == "discord":
