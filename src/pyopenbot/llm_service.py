@@ -1,6 +1,7 @@
 from any_llm import completion
 from typing import List, Dict, Any, Optional
 import requests
+import asyncio
 import time
 
 
@@ -9,9 +10,8 @@ class LLMService:
         self.character = character
         self.model = f"openrouter/{character.llm_model}"  # e.g., "openrouter/z-ai/glm-4.5"
         
-    def get_response(self, user_message, conversation_history: List[Dict]) -> tuple[str, dict]:
+    async def get_response(self, user_message, conversation_history: List[Dict]) -> tuple[str, dict]:
         if isinstance(user_message, str):
-            # Simple text message - use existing conversation history
             messages = [
                 {"role": "system", "content": self.character.character_card},
                 *conversation_history
@@ -19,8 +19,8 @@ class LLMService:
         else:
             messages = [
                 {"role": "system", "content": self.character.character_card},
-                *conversation_history[:-1],  # All but the last system message
-                {"role": "user", "content": user_message}  # Add structured content as user message
+                *conversation_history[:-1],
+                {"role": "user", "content": user_message}
             ]
         
         completion_kwargs = {
@@ -43,12 +43,12 @@ class LLMService:
         
         if hasattr(response, 'id'):
             generation_id = response.id
-            time.sleep(2)
+            await asyncio.sleep(2)
             
             for attempt in range(3):
                 try:
                     if attempt > 0:
-                        time.sleep(1)
+                        await asyncio.sleep(1)
                     
                     headers = {'Authorization': f'Bearer {self.character.api_key}'}
                     gen_response = requests.get(
