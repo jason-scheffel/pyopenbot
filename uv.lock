@@ -629,6 +629,7 @@ name = "pyopenbot"
 version = "0.3.0"
 source = { editable = "." }
 dependencies = [
+    { name = "aiohttp" },
     { name = "any-llm-sdk" },
     { name = "discord-py", extra = ["voice"] },
     { name = "pyyaml" },
@@ -644,6 +645,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "aiohttp", specifier = ">=3.11.11" },
     { name = "any-llm-sdk", specifier = ">=0.13.1" },
     { name = "discord-py", extras = ["voice"], specifier = ">=2.4.0" },
     { name = "pyyaml", specifier = ">=6.0.2" },

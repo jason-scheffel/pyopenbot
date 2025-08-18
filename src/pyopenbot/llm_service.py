@@ -12,13 +12,9 @@ class LLMService:
         
     async def get_response(self, user_message, conversation_history: List[Dict]) -> tuple[str, dict]:
         if isinstance(user_message, str):
-            messages = [
-                {"role": "system", "content": self.character.character_card},
-                *conversation_history
-            ]
+            messages = conversation_history
         else:
             messages = [
-                {"role": "system", "content": self.character.character_card},
                 *conversation_history[:-1],
                 {"role": "user", "content": user_message}
             ]

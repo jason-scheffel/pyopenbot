@@ -1,4 +1,4 @@
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Union
 from dataclasses import dataclass, field
 
 
@@ -11,7 +11,7 @@ class Memory:
     total_prompt_tokens: int = 0
     total_completion_tokens: int = 0
     
-    def add_message(self, role: str, content: str):
+    def add_message(self, role: str, content: Union[str, List[Dict]]):
         self.messages.append({"role": role, "content": content})
     
     def add_usage(self, usage: dict):

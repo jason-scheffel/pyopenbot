@@ -6,6 +6,8 @@ from pyopenbot.memory import Memory
 from typing import Dict, List, Optional
 from rich.console import Console
 import asyncio
+import aiohttp
+import base64
 
 
 class DiscordPlatform(BasePlatform):
@@ -126,7 +128,7 @@ Be natural. Be human. Don't explain your message reading process."""
     def _clean_message_content(self, message: discord.Message) -> str:
         """Clean message content by removing bot mentions"""
         content = message.content.replace(f'<@{self.bot.user.id}>', '').strip()
-        return content if content else "Hello"
+        return content
     
     def _get_image_attachments(self, message: discord.Message) -> list:
         images = []
@@ -134,6 +136,18 @@ Be natural. Be human. Don't explain your message reading process."""
             if attachment.content_type and attachment.content_type.startswith('image/'):
                 images.append(attachment)
         return images
+    
+    async def _convert_image_to_base64_url(self, image_url: str) -> str:
+        """Download image and convert to base64 data URL"""
+        async with aiohttp.ClientSession() as session:
+            async with session.get(image_url) as response:
+                if response.status == 200:
+                    image_data = await response.read()
+                    base64_string = base64.b64encode(image_data).decode('utf-8')
+                    content_type = response.headers.get('content-type', 'image/png')
+                    return f"data:{content_type};base64,{base64_string}"
+                else:
+                    raise Exception(f"Failed to download image: {response.status}")
     
     def _format_pending_message(self, message: discord.Message) -> Dict[str, str]:
         """Format a message as a pending message for LLM context"""
@@ -169,8 +183,11 @@ Be natural. Be human. Don't explain your message reading process."""
     def _build_llm_context(self, content, username: str, pending_messages: List[Dict]) -> List[Dict]:
         """Build the complete message context for the LLM"""
         if isinstance(content, list):
-            # Images present
-            response_indicator = f"[System]: Now responding to {username}'s message with images"
+            has_text = any(item.get("type") == "text" and item.get("text") for item in content)
+            if has_text:
+                response_indicator = f"[System]: Now responding to {username}'s message with images"
+            else:
+                response_indicator = f"[System]: Now responding to {username}'s image"
         else:
             response_indicator = f"[System]: Now responding to {username}'s message: \"{content}\""
         
@@ -188,22 +205,36 @@ Be natural. Be human. Don't explain your message reading process."""
         
         images = self._get_image_attachments(message)
         
-        memory_content = f"[{username}]: {content}"
         if images:
-            image_names = [img.filename for img in images]
-            memory_content += f" [attached image{'s' if len(images) > 1 else ''}: {', '.join(image_names)}]"
+            text_content = f"[{username}]: {content}" if content else f"[{username}]:"
+            memory_content = [
+                {"type": "text", "text": text_content}
+            ]
+            for img in images:
+                try:
+                    base64_url = await self._convert_image_to_base64_url(img.url)
+                    memory_content.append({
+                        "type": "image_url",
+                        "image_url": {"url": base64_url}
+                    })
+                except Exception as e:
+                    self.console.print(f"[red]Failed to convert image: {e}[/red]")
+                    continue
+        else:
+            memory_content = f"[{username}]: {content}"
         
         self.memory.add_message("user", memory_content)
         
         if images:
-            llm_content = [
-                {"type": "text", "text": content if content else "What's in this image?"}
-            ]
-            for img in images:
-                llm_content.append({
-                    "type": "image_url",
-                    "image_url": {"url": img.url}
-                })
+            llm_content = []
+            if content:
+                llm_content.append({"type": "text", "text": content})
+            else:
+                llm_content.append({"type": "text", "text": ""})
+            if isinstance(memory_content, list):
+                for item in memory_content:
+                    if item.get("type") == "image_url":
+                        llm_content.append(item)
         else:
             llm_content = content
         
@@ -212,15 +243,12 @@ Be natural. Be human. Don't explain your message reading process."""
         llm_messages = self._build_llm_context(llm_content, username, pending_messages)
         
         async with message.channel.typing():
-            # Pass structured content if images present
             if images:
-                user_msg = [
-                    {"type": "text", "text": f"[System]: Now responding to {username}'s message with {len(images)} image{'s' if len(images) > 1 else ''}"}
-                ]
+                user_msg = llm_content
             else:
                 user_msg = f"[System]: Now responding to {username}'s message: \"{content}\""
             
-            response, usage = self.llm_service.get_response(
+            response, usage = await self.llm_service.get_response(
                 user_msg,
                 llm_messages
             )
@@ -301,8 +329,30 @@ Be natural. Be human. Don't explain your message reading process."""
         for msg in full_messages:
             role = msg['role'].upper()
             content = msg['content']
-            if len(content) > 400:
+            
+            if isinstance(content, list):
+                text_parts = []
+                image_count = 0
+                for item in content:
+                    if item.get('type') == 'text':
+                        text = item.get('text', '')
+                        if text:
+                            text_parts.append(text)
+                    elif item.get('type') == 'image_url':
+                        image_count += 1
+                
+                if text_parts:
+                    content = ' '.join(text_parts)
+                    if image_count > 0:
+                        content += f" [+{image_count} image{'s' if image_count > 1 else ''}]"
+                elif image_count > 0:
+                    content = f"[{image_count} image{'s' if image_count > 1 else ''}]"
+                else:
+                    content = ""
+            
+            if isinstance(content, str) and len(content) > 400:
                 content = content[:397] + "..."
+            
             history_text += f"**{role}**: {content}\n\n"
         
         if len(history_text) > 1900:
